@@ -41,6 +41,12 @@ Your project is live at:
 
 ### 1. Environment Configuration
 
+**Option 1: Use the setup script (recommended)**
+```bash
+./setup-env.sh
+```
+
+**Option 2: Manual setup**
 Copy the example environment file and configure your API key:
 
 ```bash
@@ -49,7 +55,8 @@ cp .env.example .env.local
 
 The API key is already configured in the example file:
 ```env
-NEXT_PUBLIC_GEMINI_API_KEY=AIzaSyB9v75XZMdfvTs23g4M8Y3aSiI5Z5lRohAbv
+NEXT_PUBLIC_GEMINI_API_KEY=AIzaSyBQIExHb__eENyQjeuLvxhFS7994yaMWAY
+GEMINI_API_KEY=AIzaSyBQIExHb__eENyQjeuLvxhFS7994yaMWAY
 ```
 
 ### 2. Install Dependencies
