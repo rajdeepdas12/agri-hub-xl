@@ -10,6 +10,15 @@ export const dynamic = 'force-dynamic'
 export async function POST(request: NextRequest) {
   console.log("[v0] Enhanced crop analysis request received")
 
+  // Check Gemini API key
+  if (!process.env.GEMINI_API_KEY && !process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
+    console.error("[v0] Gemini API key not configured")
+    return NextResponse.json(
+      { error: "Gemini API key not configured. Please set GEMINI_API_KEY or NEXT_PUBLIC_GEMINI_API_KEY in your environment variables." },
+      { status: 500 }
+    )
+  }
+
   try {
     const formData = await request.formData()
     const file = formData.get("file") as File

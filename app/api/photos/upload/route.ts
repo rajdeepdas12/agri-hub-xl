@@ -23,10 +23,10 @@ export async function POST(request: NextRequest) {
     }
 
     // Check Gemini API key
-    if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
+    if (!process.env.GEMINI_API_KEY && !process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
       console.error("[v0] Gemini API key not configured")
       return NextResponse.json(
-        { error: "Gemini API key not configured. Please set NEXT_PUBLIC_GEMINI_API_KEY in your environment variables." },
+        { error: "Gemini API key not configured. Please set GEMINI_API_KEY or NEXT_PUBLIC_GEMINI_API_KEY in your environment variables." },
         { status: 500 }
       )
     }

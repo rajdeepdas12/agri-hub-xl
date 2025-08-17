@@ -62,7 +62,7 @@ export const defaultGeminiConfig: GeminiConfig = {
 // Get Gemini API configuration
 export function getGeminiConfig(): GeminiConfig {
   return {
-    apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY || defaultGeminiConfig.apiKey,
+    apiKey: process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY || defaultGeminiConfig.apiKey,
     model: process.env.NEXT_PUBLIC_GEMINI_MODEL || defaultGeminiConfig.model,
     maxTokens: Number(process.env.NEXT_PUBLIC_GEMINI_MAX_TOKENS) || defaultGeminiConfig.maxTokens,
     temperature: Number(process.env.NEXT_PUBLIC_GEMINI_TEMPERATURE) || defaultGeminiConfig.temperature,
