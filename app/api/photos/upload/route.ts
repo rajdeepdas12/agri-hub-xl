@@ -7,6 +7,16 @@ export async function POST(request: NextRequest) {
   console.log("[v0] Photo upload request received")
 
   try {
+    // Initialize storage directories
+    try {
+      const { initializeStorage } = await import("@/lib/file-storage")
+      await initializeStorage()
+      console.log("[v0] Storage initialized successfully")
+    } catch (initError) {
+      console.error("[v0] Storage initialization failed:", initError)
+      // Continue anyway, the upload might still work
+    }
+
     const requiredEnvVars = ["NEXT_PUBLIC_GEMINI_API_KEY"]
     const missingEnvVars = requiredEnvVars.filter((envVar) => !process.env[envVar])
 
