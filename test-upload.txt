@@ -1,4 +1,0 @@
-This is a test file to verify GitHub upload functionality.
-Created on: $(date)
-Repository: agri-hub-xl
-Branch: cursor/fix-github-file-upload-issue-3aee
