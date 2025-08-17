@@ -26,6 +26,12 @@ yarn-error.log*
 *.tsbuildinfo
 next-env.d.ts
 
+# Large files and system files
+core
+*.core
+*.dump
+*.log
+
 # uploads
 /uploads
 /test-image.jpg
