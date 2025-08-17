@@ -29,7 +29,16 @@ export function ThemeProvider({
   storageKey = "agrisecure-ui-theme",
   ...props
 }: ThemeProviderProps) {
-  const [theme, setTheme] = useState<Theme>(() => (localStorage?.getItem(storageKey) as Theme) || defaultTheme)
+  const [theme, setTheme] = useState<Theme>(defaultTheme)
+
+  useEffect(() => {
+    if (typeof window !== "undefined") {
+      const stored = window.localStorage.getItem(storageKey) as Theme | null
+      if (stored) {
+        setTheme(stored)
+      }
+    }
+  }, [storageKey])
 
   useEffect(() => {
     const root = window.document.documentElement
@@ -48,9 +57,11 @@ export function ThemeProvider({
 
   const value = {
     theme,
-    setTheme: (theme: Theme) => {
-      localStorage?.setItem(storageKey, theme)
-      setTheme(theme)
+    setTheme: (nextTheme: Theme) => {
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(storageKey, nextTheme)
+      }
+      setTheme(nextTheme)
     },
   }
 
