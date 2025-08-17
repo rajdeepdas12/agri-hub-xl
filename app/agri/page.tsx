@@ -260,7 +260,7 @@ export default function AgriDashboard() {
       console.log("[v0] Processing quick action:", actionType)
 
       switch (actionType) {
-        case "emergency_survey":
+        case "emergency_survey": {
           const surveyResponse = await fetch("/api/drone/emergency-survey", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -273,12 +273,13 @@ export default function AgriDashboard() {
             })
           }
           break
+        }
 
         case "schedule_mission":
           setShowMissionPlanner(true)
           break
 
-        case "aerial_report":
+        case "aerial_report": {
           const reportResponse = await fetch("/api/drone/aerial-report", {
             method: "POST",
             headers: { "Content-Type": "application/json" },
@@ -292,6 +293,7 @@ export default function AgriDashboard() {
             })
           }
           break
+        }
       }
     } catch (error) {
       console.error("[v0] Error processing quick action:", error)
@@ -687,7 +689,7 @@ export default function AgriDashboard() {
         throw new Error("Camera API not supported in this browser")
       }
 
-      const permissions = await navigator.permissions.query({ name: "camera" as PermissionName })
+      const permissions = await navigator.permissions.query({ name: "camera" as any })
       console.log("[v0] Camera permission status:", permissions.state)
 
       if (permissions.state === "denied") {

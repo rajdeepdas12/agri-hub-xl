@@ -95,7 +95,7 @@ export async function POST(request: NextRequest) {
         }
         break
 
-      case "updateTags":
+      case "updateTags": {
         const { tags } = body
         if (!tags || !Array.isArray(tags)) {
           return NextResponse.json({ error: "Tags array required for updateTags operation" }, { status: 400 })
@@ -119,6 +119,7 @@ export async function POST(request: NextRequest) {
           }
         }
         break
+      }
 
       default:
         return NextResponse.json({ error: "Invalid operation" }, { status: 400 })

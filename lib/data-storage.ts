@@ -49,6 +49,7 @@ class DataStorageService {
 
   private initStorage(): StoredData[] {
     try {
+      if (typeof window === 'undefined') return []
       const stored = localStorage.getItem(this.storageKey)
       return stored ? JSON.parse(stored) : []
     } catch (error) {
@@ -59,6 +60,7 @@ class DataStorageService {
 
   private saveStorage(data: StoredData[]): void {
     try {
+      if (typeof window === 'undefined') return
       // Clean old data before saving
       const cleanedData = this.cleanOldData(data)
       localStorage.setItem(this.storageKey, JSON.stringify(cleanedData))
@@ -260,7 +262,9 @@ export class DataStorage {
   }
 
   static clearAll(): void {
-    localStorage.removeItem("agrisecure_data")
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem("agrisecure_data")
+    }
   }
 }
 
