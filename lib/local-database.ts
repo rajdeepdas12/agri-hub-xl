@@ -51,35 +51,39 @@ class LocalDatabase {
 
   private loadFromStorage() {
     try {
-      if (typeof window !== "undefined") {
-        const photosData = localStorage.getItem("agrisecure_photos")
-        const usersData = localStorage.getItem("agrisecure_users")
-        const photoIdData = localStorage.getItem("agrisecure_next_photo_id")
-        const userIdData = localStorage.getItem("agrisecure_next_user_id")
+      // For server-side, we'll use in-memory storage only
+      if (typeof window === "undefined") {
+        console.log("[v0] Server-side local database - using in-memory storage")
+        return
+      }
 
-        if (photosData) {
-          this.photos = JSON.parse(photosData).map((photo: any) => ({
-            ...photo,
-            created_at: new Date(photo.created_at),
-            capture_date: photo.capture_date ? new Date(photo.capture_date) : undefined,
-          }))
-        }
+      const photosData = localStorage.getItem("agrisecure_photos")
+      const usersData = localStorage.getItem("agrisecure_users")
+      const photoIdData = localStorage.getItem("agrisecure_next_photo_id")
+      const userIdData = localStorage.getItem("agrisecure_next_user_id")
 
-        if (usersData) {
-          this.users = JSON.parse(usersData).map((user: any) => ({
-            ...user,
-            created_at: new Date(user.created_at),
-            updated_at: new Date(user.updated_at),
-          }))
-        }
+      if (photosData) {
+        this.photos = JSON.parse(photosData).map((photo: any) => ({
+          ...photo,
+          created_at: new Date(photo.created_at),
+          capture_date: photo.capture_date ? new Date(photo.capture_date) : undefined,
+        }))
+      }
 
-        if (photoIdData) {
-          this.nextPhotoId = Number.parseInt(photoIdData, 10)
-        }
+      if (usersData) {
+        this.users = JSON.parse(usersData).map((user: any) => ({
+          ...user,
+          created_at: new Date(user.created_at),
+          updated_at: new Date(user.updated_at),
+        }))
+      }
 
-        if (userIdData) {
-          this.nextUserId = Number.parseInt(userIdData, 10)
-        }
+      if (photoIdData) {
+        this.nextPhotoId = Number.parseInt(photoIdData, 10)
+      }
+
+      if (userIdData) {
+        this.nextUserId = Number.parseInt(userIdData, 10)
       }
     } catch (error) {
       console.error("[v0] Error loading from local storage:", error)
@@ -88,12 +92,15 @@ class LocalDatabase {
 
   private saveToStorage() {
     try {
-      if (typeof window !== "undefined") {
-        localStorage.setItem("agrisecure_photos", JSON.stringify(this.photos))
-        localStorage.setItem("agrisecure_users", JSON.stringify(this.users))
-        localStorage.setItem("agrisecure_next_photo_id", this.nextPhotoId.toString())
-        localStorage.setItem("agrisecure_next_user_id", this.nextUserId.toString())
+      // For server-side, we'll skip localStorage operations
+      if (typeof window === "undefined") {
+        return
       }
+
+      localStorage.setItem("agrisecure_photos", JSON.stringify(this.photos))
+      localStorage.setItem("agrisecure_users", JSON.stringify(this.users))
+      localStorage.setItem("agrisecure_next_photo_id", this.nextPhotoId.toString())
+      localStorage.setItem("agrisecure_next_user_id", this.nextUserId.toString())
     } catch (error) {
       console.error("[v0] Error saving to local storage:", error)
     }

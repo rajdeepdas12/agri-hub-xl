@@ -29,8 +29,7 @@ function isPreviewEnvironment(): boolean {
   return (
     process.env.VERCEL_ENV === "preview" ||
     process.env.NETLIFY === "true" ||
-    process.env.NODE_ENV === "production" ||
-    typeof process.env.VERCEL_URL !== "undefined"
+    (process.env.NODE_ENV === "production" && process.env.VERCEL_URL)
   )
 }
 
@@ -156,11 +155,8 @@ export async function saveUploadedFile(
       const base64 = Buffer.from(arrayBuffer).toString("base64")
       const dataUrl = `data:${file.type};base64,${base64}`
 
-      // Store in localStorage for preview builds
-      if (typeof localStorage !== "undefined") {
-        const storageKey = `upload_${filename}`
-        localStorage.setItem(storageKey, dataUrl)
-      }
+      // Store in memory for preview builds (localStorage not available on server)
+      console.log("[v0] Storing file in memory for preview environment")
 
       return {
         filename,

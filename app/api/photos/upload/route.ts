@@ -16,7 +16,7 @@ export async function POST(request: NextRequest) {
 
     console.log("[v0] Checking local database connection...")
     const dbConnected = await checkLocalDatabaseConnection()
-    console.log("[v0] Local database is always available:", dbConnected)
+    console.log("[v0] Local database connection status:", dbConnected)
 
     console.log("[v0] Parsing form data...")
     const formData = await request.formData()
