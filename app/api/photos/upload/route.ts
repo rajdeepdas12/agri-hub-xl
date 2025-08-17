@@ -4,6 +4,10 @@ import FileStorage from "@/lib/file-storage"
 import ImageProcessing from "@/lib/image-processing"
 import { analyzeCropDisease, generateAnalysisReport } from "@/lib/gemini-api"
 
+// Configure for large file uploads
+export const maxDuration = 300 // 5 minutes
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: NextRequest) {
   console.log("[v0] Photo upload request received")
 

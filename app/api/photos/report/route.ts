@@ -2,6 +2,9 @@ import { type NextRequest, NextResponse } from "next/server"
 import { generateAnalysisReport } from "@/lib/gemini-api"
 import { LocalDatabaseService } from "@/lib/local-database"
 
+// Configure for dynamic responses
+export const dynamic = 'force-dynamic'
+
 export async function POST(request: NextRequest) {
   console.log("[v0] Report generation request received")
 

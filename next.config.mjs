@@ -10,14 +10,10 @@ const nextConfig = {
     unoptimized: true,
   },
   // Configure file upload handling
+  serverExternalPackages: ['sharp'],
+  // Configure experimental features
   experimental: {
-    serverComponentsExternalPackages: ['sharp'],
-  },
-  // Increase body size limit for file uploads
-  api: {
-    bodyParser: {
-      sizeLimit: '20mb',
-    },
+    // Add any experimental features here if needed
   },
 }
 
