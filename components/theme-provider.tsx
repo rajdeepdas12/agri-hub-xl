@@ -32,9 +32,11 @@ export function ThemeProvider({
   const [theme, setTheme] = useState<Theme>(defaultTheme)
 
   useEffect(() => {
-    const storedTheme = localStorage?.getItem(storageKey) as Theme
-    if (storedTheme) {
-      setTheme(storedTheme)
+    if (typeof window !== "undefined") {
+      const stored = window.localStorage.getItem(storageKey) as Theme | null
+      if (stored) {
+        setTheme(stored)
+      }
     }
   }, [storageKey])
 
@@ -55,9 +57,11 @@ export function ThemeProvider({
 
   const value = {
     theme,
-    setTheme: (theme: Theme) => {
-      localStorage?.setItem(storageKey, theme)
-      setTheme(theme)
+    setTheme: (nextTheme: Theme) => {
+      if (typeof window !== "undefined") {
+        window.localStorage.setItem(storageKey, nextTheme)
+      }
+      setTheme(nextTheme)
     },
   }
 
