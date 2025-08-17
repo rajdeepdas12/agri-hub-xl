@@ -78,7 +78,7 @@ async function imageToBase64(imagePath: string): Promise<string> {
   return imageBuffer.toString("base64")
 }
 
-// Build Gemini API request payload
+// Build Gemini API request payload according to official documentation
 function buildGeminiRequest(
   base64Image: string,
   prompt: string,
@@ -87,6 +87,7 @@ function buildGeminiRequest(
   return {
     contents: [
       {
+        role: "user",
         parts: [
           {
             text: prompt,
@@ -105,6 +106,7 @@ function buildGeminiRequest(
       top_p: config.topP,
       top_k: config.topK,
       max_output_tokens: config.maxTokens,
+      candidate_count: 1,
     },
     safety_settings: [
       {
@@ -140,31 +142,31 @@ export async function analyzeCropDisease(imagePath: string): Promise<AnalysisRep
     const base64Image = await imageToBase64(imagePath)
     
     // Create comprehensive prompt for crop disease analysis
-    const prompt = `You are an expert agricultural scientist and plant pathologist. Analyze this crop image and provide a detailed disease analysis report.
+    const prompt = `You are an expert agricultural scientist and plant pathologist with 20+ years of experience in crop disease diagnosis and treatment. Analyze this crop image and provide a detailed disease analysis report.
 
 Please identify:
-1. The crop type/name
+1. The crop type/name (be specific about variety if possible)
 2. Any diseases or health issues present
 3. The severity level (low/medium/high/critical)
-4. Specific symptoms visible
-5. Likely causes
-6. Treatment recommendations
-7. Prevention measures
+4. Specific symptoms visible in the image
+5. Likely causes and contributing factors
+6. Treatment recommendations with specific products and dosages
+7. Prevention measures for future outbreaks
 8. Urgency of action needed
 9. Estimated yield loss percentage
 10. Cost range for treatment
 
-Respond in the following JSON format:
+Respond in the following JSON format ONLY (no additional text):
 {
-  "cropName": "string",
+  "cropName": "string (specific crop name)",
   "diseaseName": "string or 'healthy' if no disease",
   "confidence": number (0-100),
   "severity": "low|medium|high|critical",
-  "symptoms": ["array of symptoms"],
-  "causes": ["array of causes"],
-  "treatments": ["array of treatments"],
+  "symptoms": ["array of specific symptoms"],
+  "causes": ["array of causes and contributing factors"],
+  "treatments": ["array of specific treatments with dosages"],
   "prevention": ["array of prevention measures"],
-  "recommendations": ["array of recommendations"],
+  "recommendations": ["array of actionable recommendations"],
   "urgency": "immediate|within_week|within_month|monitor",
   "estimatedYieldLoss": number (0-100),
   "costOfTreatment": {
@@ -174,7 +176,7 @@ Respond in the following JSON format:
   }
 }
 
-If the crop appears healthy, indicate "healthy" as diseaseName and provide general care recommendations.`
+If the crop appears healthy, indicate "healthy" as diseaseName and provide general care recommendations. Be precise and actionable in your analysis.`
 
     const requestBody = buildGeminiRequest(base64Image, prompt, config)
 
@@ -208,6 +210,11 @@ If the crop appears healthy, indicate "healthy" as diseaseName and provide gener
         throw new Error("No JSON found in response")
       }
       analysisData = JSON.parse(jsonMatch[0])
+      
+      // Validate required fields
+      if (!analysisData.cropName || !analysisData.diseaseName) {
+        throw new Error("Invalid analysis data: missing required fields")
+      }
     } catch (parseError) {
       console.error("Failed to parse Gemini response:", responseText)
       throw new Error("Failed to parse analysis response")
@@ -252,8 +259,6 @@ If the crop appears healthy, indicate "healthy" as diseaseName and provide gener
 
 // Generate detailed PDF report
 export async function generateAnalysisReport(report: AnalysisReport): Promise<string> {
-  // This would integrate with a PDF generation library
-  // For now, return a formatted text report
   const reportText = `
 CROP DISEASE ANALYSIS REPORT
 ============================

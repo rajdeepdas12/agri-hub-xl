@@ -175,6 +175,10 @@ export async function POST(request: NextRequest) {
             estimatedYieldLoss: geminiAnalysis.analysis.estimatedYieldLoss,
             treatments: geminiAnalysis.analysis.treatments,
             recommendations: geminiAnalysis.analysis.recommendations,
+            symptoms: geminiAnalysis.analysis.symptoms,
+            causes: geminiAnalysis.analysis.causes,
+            prevention: geminiAnalysis.analysis.prevention,
+            costOfTreatment: geminiAnalysis.analysis.costOfTreatment,
           }
 
           console.log("[v0] About to update photo analysis in database...")
