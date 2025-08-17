@@ -22,6 +22,15 @@ export async function POST(request: NextRequest) {
       // Continue anyway, the upload might still work
     }
 
+    // Check Gemini API key
+    if (!process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
+      console.error("[v0] Gemini API key not configured")
+      return NextResponse.json(
+        { error: "Gemini API key not configured. Please set NEXT_PUBLIC_GEMINI_API_KEY in your environment variables." },
+        { status: 500 }
+      )
+    }
+
     const requiredEnvVars = ["NEXT_PUBLIC_GEMINI_API_KEY"]
     const missingEnvVars = requiredEnvVars.filter((envVar) => !process.env[envVar])
 

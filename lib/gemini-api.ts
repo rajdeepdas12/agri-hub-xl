@@ -156,6 +156,12 @@ Please identify:
 9. Estimated yield loss percentage
 10. Cost range for treatment
 
+IMPORTANT: Include specific fertilizer recommendations in the treatments array. Mention:
+- NPK ratios (e.g., "NPK 20-20-20 fertilizer at 2kg per acre")
+- Organic fertilizers (e.g., "Compost tea application")
+- Micronutrient fertilizers (e.g., "Zinc sulfate at 5kg per hectare")
+- Timing and application methods
+
 Respond in the following JSON format ONLY (no additional text):
 {
   "cropName": "string (specific crop name)",
@@ -164,7 +170,7 @@ Respond in the following JSON format ONLY (no additional text):
   "severity": "low|medium|high|critical",
   "symptoms": ["array of specific symptoms"],
   "causes": ["array of causes and contributing factors"],
-  "treatments": ["array of specific treatments with dosages"],
+  "treatments": ["array of specific treatments with dosages including fertilizers"],
   "prevention": ["array of prevention measures"],
   "recommendations": ["array of actionable recommendations"],
   "urgency": "immediate|within_week|within_month|monitor",
@@ -176,7 +182,7 @@ Respond in the following JSON format ONLY (no additional text):
   }
 }
 
-If the crop appears healthy, indicate "healthy" as diseaseName and provide general care recommendations. Be precise and actionable in your analysis.`
+If the crop appears healthy, indicate "healthy" as diseaseName and provide general care recommendations including appropriate fertilizers. Be precise and actionable in your analysis.`
 
     const requestBody = buildGeminiRequest(base64Image, prompt, config)
 
