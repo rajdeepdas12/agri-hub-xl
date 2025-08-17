@@ -25,3 +25,9 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# uploads
+/uploads
+/test-image.jpg
+/test-upload.html
+/test-upload-api.js
