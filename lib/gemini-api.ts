@@ -181,7 +181,6 @@ export function validateGeminiApiKey(): boolean {
   const config = getGeminiConfig()
   return config.apiKey && 
          config.apiKey !== "your_gemini_api_key_here" && 
-         config.apiKey !== "demo_key_for_testing" &&
          config.apiKey.length > 10
 }
 
@@ -393,20 +392,28 @@ export async function analyzeImageWithGemini(
       return getDemoAnalysisResponse()
     }
     
-    const request: GeminiRequest = {
-      model: "google/gemini-2.0-flash",
-      messages: [
-        {
-          role: "user",
-          content: `${prompt}\n\nImage data: ${imageBase64}`,
-        },
-      ],
-      max_tokens: 1000,
-      temperature: 0.3,
+    const config = getGeminiConfig()
+    const requestBody = buildGeminiRequest(imageBase64, prompt, config)
+
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${config.model}:generateContent?key=${config.apiKey}`, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestBody),
+    })
+
+    if (!response.ok) {
+      throw new Error(`Gemini API error: ${response.status}`)
     }
 
-    const response = await callGeminiApi(request)
-    return response.choices[0]?.message?.content || "No analysis available"
+    const data = await response.json()
+    
+    if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
+      throw new Error("Invalid response from Gemini API")
+    }
+
+    return data.candidates[0].content.parts[0].text || "No analysis available"
   } catch (error) {
     console.error("[v0] Gemini image analysis error:", error)
     console.log("[v0] Falling back to demo analysis")
