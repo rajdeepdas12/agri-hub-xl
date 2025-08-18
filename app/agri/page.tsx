@@ -471,6 +471,28 @@ export default function AgriDashboard() {
     }
   }
 
+  const downloadPhotoPdf = async (photoId: number, filename: string) => {
+    try {
+      const res = await fetch(`/api/photos/report`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ photoId, format: "pdf" }),
+      })
+      if (!res.ok) throw new Error(`Failed to download PDF (${res.status})`)
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `${filename}_analysis.pdf`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+    } catch (e) {
+      alert(e instanceof Error ? e.message : "Failed to download PDF")
+    }
+  }
+
   const downloadReport = async (report: any) => {
     if (!report.downloadUrl) return
 
@@ -1602,13 +1624,19 @@ export default function AgriDashboard() {
                             <p className="font-medium dark:text-slate-100 truncate">{photo.originalName}</p>
                             <p className="text-sm text-slate-600 dark:text-slate-300">
                               Status: {photo.analysisStatus} • {new Date(photo.createdAt).toLocaleTimeString()}
-                              {photo.analysisResults?.confidence && (
-                                <span> • Confidence: {Math.round(photo.analysisResults.confidence * 100)}%</span>
+                              {typeof photo.analysisResults?.confidence !== "undefined" && (
+                                <span>
+                                  {" "}• Confidence:{" "}
+                                  {photo.analysisResults.confidence > 1
+                                    ? Math.round(photo.analysisResults.confidence)
+                                    : Math.round(photo.analysisResults.confidence * 100)}
+                                  %
+                                </span>
                               )}
                             </p>
-                            {photo.analysisResults?.disease_detected && (
+                            {photo.analysisResults?.diseaseName && (
                               <p className="text-xs text-red-600 dark:text-red-400 mt-1">
-                                Disease detected: {photo.analysisResults.disease_type}
+                                Disease: {photo.analysisResults.diseaseName}
                               </p>
                             )}
                           </div>
@@ -1638,6 +1666,16 @@ export default function AgriDashboard() {
                               }}
                             >
                               <Eye className="w-4 h-4" />
+                            </Button>
+                          )}
+                          {photo.analysisStatus === "completed" && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 bg-transparent"
+                              onClick={() => downloadPhotoPdf(photo.id, photo.filename)}
+                            >
+                              <Download className="w-4 h-4 mr-1" /> PDF
                             </Button>
                           )}
                         </div>
