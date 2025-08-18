@@ -129,7 +129,6 @@ function buildGeminiRequest(
   }
 }
 
-<<<<<<< HEAD
 // Validate Gemini API key
 export function validateGeminiApiKey(): boolean {
   const config = getGeminiConfig()
@@ -149,15 +148,42 @@ export async function callGeminiApi(request: GeminiRequest): Promise<GeminiRespo
 
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), config.timeout)
-=======
+
+  try {
+    const response = await fetch(url, {
+      method: "POST",
+      headers: buildGeminiHeaders(),
+      body: JSON.stringify({
+        model: config.model,
+        ...request,
+      }),
+      signal: controller.signal,
+    })
+
+    clearTimeout(timeoutId)
+
+    if (!response.ok) {
+      const errorText = await response.text()
+      throw new Error(`Gemini API error: ${response.status} ${response.statusText} - ${errorText}`)
+    }
+
+    return await response.json()
+  } catch (error) {
+    clearTimeout(timeoutId)
+    if (error instanceof Error && error.name === "AbortError") {
+      throw new Error("Gemini API request timeout")
+    }
+    throw error
+  }
+}
+
 // Analyze crop image for disease detection using Gemini 2.0 Flash
 export async function analyzeCropDisease(imagePath: string): Promise<AnalysisReport> {
   const config = getGeminiConfig()
   
-  if (!config.apiKey) {
-    throw new Error("Gemini API key not configured")
+  if (!validateGeminiApiKey()) {
+    throw new Error("Gemini API key not configured. Please set GEMINI_API_KEY or NEXT_PUBLIC_GEMINI_API_KEY in your environment variables.")
   }
->>>>>>> 30d164bf3a8e706718d1f68967fa2c95b27983a6
 
   try {
     // Convert image to base64
@@ -285,7 +311,6 @@ If the crop appears healthy, indicate "healthy" as diseaseName and provide gener
   }
 }
 
-<<<<<<< HEAD
 // Get demo analysis response
 export function getDemoAnalysisResponse(): string {
   const responses = [
@@ -332,7 +357,8 @@ export async function analyzeImageWithGemini(
     console.log("[v0] Falling back to demo analysis")
     return getDemoAnalysisResponse()
   }
-=======
+}
+
 // Generate detailed PDF report
 export async function generateAnalysisReport(report: AnalysisReport): Promise<string> {
   const reportText = `
@@ -395,7 +421,6 @@ Version: ${report.version}
   `
 
   return reportText
->>>>>>> 30d164bf3a8e706718d1f68967fa2c95b27983a6
 }
 
 // Get current season based on date
