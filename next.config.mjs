@@ -8,6 +8,7 @@ const nextConfig = {
   },
   images: {
     unoptimized: true,
+    remotePatterns: [{ protocol: "https", hostname: "static.vecteezy.com" }],
   },
   // Configure file upload handling
   serverExternalPackages: ['sharp'],
