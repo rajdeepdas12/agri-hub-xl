@@ -75,8 +75,8 @@ export async function POST(request: NextRequest) {
       }
       console.error("[v0] Plant.id error:", resp.status, details)
       return NextResponse.json(
-        { error: "Plant.id request failed", status: resp.status, details },
-        { status: 502 },
+        { error: true, status: resp.status, details },
+        { status: resp.status },
       )
     }
 
