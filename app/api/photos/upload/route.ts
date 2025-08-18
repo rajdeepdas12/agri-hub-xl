@@ -22,20 +22,12 @@ export async function POST(request: NextRequest) {
       // Continue anyway, the upload might still work
     }
 
-    // Check Gemini API key
-    if (!process.env.GEMINI_API_KEY && !process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
-      console.error("[v0] Gemini API key not configured")
-      return NextResponse.json(
-        { error: "Gemini API key not configured. Please set GEMINI_API_KEY or NEXT_PUBLIC_GEMINI_API_KEY in your environment variables." },
-        { status: 500 }
-      )
-    }
-
-    const requiredEnvVars = ["NEXT_PUBLIC_GEMINI_API_KEY"]
-    const missingEnvVars = requiredEnvVars.filter((envVar) => !process.env[envVar])
-
-    if (missingEnvVars.length > 0) {
-      console.log("[v0] Missing environment variables:", missingEnvVars, "- using demo mode")
+    // Check Gemini API key - but don't fail, use fallback instead
+    const hasGeminiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY
+    if (!hasGeminiKey) {
+      console.log("[v0] Gemini API key not configured - will use demo mode")
+    } else {
+      console.log("[v0] Gemini API key found - will attempt real analysis")
     }
 
     console.log("[v0] Checking local database connection...")

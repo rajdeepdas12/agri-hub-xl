@@ -47,6 +47,42 @@ export interface GeminiConfig {
   temperature: number
   topP: number
   topK: number
+  baseUrl: string
+  timeout: number
+}
+
+export interface GeminiRequest {
+  contents: Array<{
+    role: string
+    parts: Array<{
+      text?: string
+      inline_data?: {
+        mime_type: string
+        data: string
+      }
+    }>
+  }>
+  generation_config: {
+    temperature: number
+    top_p: number
+    top_k: number
+    max_output_tokens: number
+    candidate_count: number
+  }
+  safety_settings: Array<{
+    category: string
+    threshold: string
+  }>
+}
+
+export interface GeminiResponse {
+  candidates: Array<{
+    content: {
+      parts: Array<{
+        text: string
+      }>
+    }
+  }>
 }
 
 // Default Gemini 2.0 Flash configuration
@@ -57,6 +93,8 @@ export const defaultGeminiConfig: GeminiConfig = {
   temperature: 0.4,
   topP: 0.8,
   topK: 40,
+  baseUrl: "https://generativelanguage.googleapis.com/v1beta",
+  timeout: 30000,
 }
 
 // Get Gemini API configuration
@@ -68,6 +106,8 @@ export function getGeminiConfig(): GeminiConfig {
     temperature: Number(process.env.NEXT_PUBLIC_GEMINI_TEMPERATURE) || defaultGeminiConfig.temperature,
     topP: Number(process.env.NEXT_PUBLIC_GEMINI_TOP_P) || defaultGeminiConfig.topP,
     topK: Number(process.env.NEXT_PUBLIC_GEMINI_TOP_K) || defaultGeminiConfig.topK,
+    baseUrl: defaultGeminiConfig.baseUrl,
+    timeout: defaultGeminiConfig.timeout,
   }
 }
 
@@ -76,6 +116,13 @@ async function imageToBase64(imagePath: string): Promise<string> {
   const fs = await import("fs")
   const imageBuffer = fs.readFileSync(imagePath)
   return imageBuffer.toString("base64")
+}
+
+// Build Gemini API headers
+function buildGeminiHeaders(): HeadersInit {
+  return {
+    "Content-Type": "application/json",
+  }
 }
 
 // Build Gemini API request payload according to official documentation
