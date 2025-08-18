@@ -2,11 +2,35 @@ import { type NextRequest, NextResponse } from "next/server"
 import { LocalDatabaseService, checkLocalDatabaseConnection } from "@/lib/local-database"
 import FileStorage from "@/lib/file-storage"
 import ImageProcessing from "@/lib/image-processing"
+import { analyzeCropDisease, generateAnalysisReport } from "@/lib/gemini-api"
+
+// Configure for large file uploads
+export const maxDuration = 300 // 5 minutes
+export const dynamic = 'force-dynamic'
 
 export async function POST(request: NextRequest) {
   console.log("[v0] Photo upload request received")
 
   try {
+    // Initialize storage directories
+    try {
+      const { initializeStorage } = await import("@/lib/file-storage")
+      await initializeStorage()
+      console.log("[v0] Storage initialized successfully")
+    } catch (initError) {
+      console.error("[v0] Storage initialization failed:", initError)
+      // Continue anyway, the upload might still work
+    }
+
+    // Check Gemini API key
+    if (!process.env.GEMINI_API_KEY && !process.env.NEXT_PUBLIC_GEMINI_API_KEY) {
+      console.error("[v0] Gemini API key not configured")
+      return NextResponse.json(
+        { error: "Gemini API key not configured. Please set GEMINI_API_KEY or NEXT_PUBLIC_GEMINI_API_KEY in your environment variables." },
+        { status: 500 }
+      )
+    }
+
     const requiredEnvVars = ["NEXT_PUBLIC_GEMINI_API_KEY"]
     const missingEnvVars = requiredEnvVars.filter((envVar) => !process.env[envVar])
 
@@ -135,15 +159,44 @@ export async function POST(request: NextRequest) {
 
       if (file.type.startsWith("image/")) {
         try {
-          console.log("[v0] About to call ImageProcessing.analyzeImage...")
-          analysisResult = await ImageProcessing.analyzeImage(savedFile.filepath)
-          console.log("[v0] Image analysis completed:", analysisResult)
+          console.log("[v0] About to call Gemini 2.0 Flash for crop disease analysis...")
+          
+          // Use Gemini 2.0 Flash for comprehensive crop disease analysis
+          const geminiAnalysis = await analyzeCropDisease(savedFile.filepath)
+          console.log("[v0] Gemini analysis completed:", geminiAnalysis)
+
+          // Generate detailed report
+          const reportText = await generateAnalysisReport(geminiAnalysis)
+          console.log("[v0] Analysis report generated")
+
+          // Combine Gemini analysis with basic image processing
+          const basicAnalysis = await ImageProcessing.analyzeImage(savedFile.filepath)
+          
+          const combinedAnalysis = {
+            ...basicAnalysis,
+            geminiAnalysis,
+            report: reportText,
+            cropName: geminiAnalysis.analysis.cropName,
+            diseaseName: geminiAnalysis.analysis.diseaseName,
+            severity: geminiAnalysis.analysis.severity,
+            confidence: geminiAnalysis.analysis.confidence,
+            urgency: geminiAnalysis.analysis.urgency,
+            estimatedYieldLoss: geminiAnalysis.analysis.estimatedYieldLoss,
+            treatments: geminiAnalysis.analysis.treatments,
+            recommendations: geminiAnalysis.analysis.recommendations,
+            symptoms: geminiAnalysis.analysis.symptoms,
+            causes: geminiAnalysis.analysis.causes,
+            prevention: geminiAnalysis.analysis.prevention,
+            costOfTreatment: geminiAnalysis.analysis.costOfTreatment,
+          }
 
           console.log("[v0] About to update photo analysis in database...")
-          await LocalDatabaseService.updatePhotoAnalysis(photo.id, analysisResult, "completed")
+          await LocalDatabaseService.updatePhotoAnalysis(photo.id, combinedAnalysis, "completed")
           console.log("[v0] Photo analysis updated in local database")
+          
+          analysisResult = combinedAnalysis
         } catch (error) {
-          console.error("[v0] Image analysis failed:", error)
+          console.error("[v0] Gemini analysis failed:", error)
           console.error("[v0] Analysis error stack:", error instanceof Error ? error.stack : "No stack")
           
           // Provide fallback analysis instead of marking as failed
@@ -171,6 +224,7 @@ export async function POST(request: NextRequest) {
           
           await LocalDatabaseService.updatePhotoAnalysis(photo.id, fallbackAnalysis, "completed")
           console.log("[v0] Photo analysis updated with fallback data")
+          analysisResult = fallbackAnalysis
         }
       }
     } catch (dbError) {
@@ -199,10 +253,22 @@ export async function POST(request: NextRequest) {
         captureDate: new Date(),
         analysisStatus: photo?.analysis_status || "pending",
         analysisResults: photo?.analysis_results,
-        message: "Photo uploaded and stored successfully in local database",
+        message: "Photo uploaded and analyzed successfully with Gemini 2.0 Flash",
         isPreviewMode: savedFile.isBase64 || false,
+        // Include comprehensive analysis data
+        cropAnalysis: analysisResult ? {
+          cropName: analysisResult.cropName,
+          diseaseName: analysisResult.diseaseName,
+          severity: analysisResult.severity,
+          confidence: analysisResult.confidence,
+          urgency: analysisResult.urgency,
+          estimatedYieldLoss: analysisResult.estimatedYieldLoss,
+          treatments: analysisResult.treatments,
+          recommendations: analysisResult.recommendations,
+          report: analysisResult.report,
+        } : null,
       },
-      message: "Upload completed successfully",
+      message: "Upload and analysis completed successfully",
     })
   } catch (error: any) {
     console.error("[v0] Photo upload error:", error)

@@ -1,84 +1,135 @@
-// Gemini 2.0 Flash API Integration
-// Based on AI/ML API documentation for google/gemini-2.0-flash
+// Gemini 2.0 Flash API Service for Crop Disease Analysis
+// Based on the official Gemini 2.0 Flash API documentation
 
-export interface GeminiMessage {
-  role: "user" | "assistant" | "system"
-  content: string
-  name?: string
-}
-
-export interface GeminiRequest {
-  model: "google/gemini-2.0-flash"
-  messages: GeminiMessage[]
-  max_completion_tokens?: number
-  max_tokens?: number
-  stream?: boolean
-  temperature?: number
-  top_p?: number
-  stop?: string | string[]
-  frequency_penalty?: number
-  presence_penalty?: number
-  seed?: number
-}
-
-export interface GeminiResponse {
-  id: string
-  object: "chat.completion"
-  choices: Array<{
-    index: number
-    finish_reason: "stop" | "length" | "content_filter"
-    message: {
-      role: "assistant"
-      content: string
-    }
-  }>
-  created: number
-  model: string
-  usage: {
-    prompt_tokens: number
-    completion_tokens: number
-    total_tokens: number
+export interface CropDiseaseAnalysis {
+  cropName: string
+  diseaseName: string
+  confidence: number
+  severity: "low" | "medium" | "high" | "critical"
+  symptoms: string[]
+  causes: string[]
+  treatments: string[]
+  prevention: string[]
+  recommendations: string[]
+  urgency: "immediate" | "within_week" | "within_month" | "monitor"
+  estimatedYieldLoss: number // percentage
+  costOfTreatment: {
+    low: number
+    high: number
+    currency: string
   }
 }
 
-// Gemini API configuration
-export interface GeminiApiConfig {
-  baseUrl: string
-  apiKey: string
-  model: string
-  timeout: number
+export interface AnalysisReport {
+  id: string
+  timestamp: string
+  imageInfo: {
+    filename: string
+    size: number
+    dimensions: { width: number; height: number }
+    format: string
+  }
+  analysis: CropDiseaseAnalysis
+  environmentalFactors: {
+    temperature: string
+    humidity: string
+    soilCondition: string
+    season: string
+  }
+  reportGenerated: string
+  version: string
 }
 
-// Default Gemini API configuration
-export const defaultGeminiConfig: GeminiApiConfig = {
-  baseUrl: "https://api.aimlapi.com/v1",
-  apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY || "AIzaSyB9v75XZMdfvTs23g4M8Y3aSiI5Z5lRohA",
-  model: "google/gemini-2.0-flash",
-  timeout: 30000,
+export interface GeminiConfig {
+  apiKey: string
+  model: string
+  maxTokens: number
+  temperature: number
+  topP: number
+  topK: number
+}
+
+// Default Gemini 2.0 Flash configuration
+export const defaultGeminiConfig: GeminiConfig = {
+  apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY || "",
+  model: "gemini-2.0-flash-exp",
+  maxTokens: 8192,
+  temperature: 0.4,
+  topP: 0.8,
+  topK: 40,
 }
 
 // Get Gemini API configuration
-export function getGeminiConfig(): GeminiApiConfig {
+export function getGeminiConfig(): GeminiConfig {
   return {
-    baseUrl: process.env.NEXT_PUBLIC_GEMINI_BASE_URL || defaultGeminiConfig.baseUrl,
-    apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY || defaultGeminiConfig.apiKey,
+    apiKey: process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY || defaultGeminiConfig.apiKey,
     model: process.env.NEXT_PUBLIC_GEMINI_MODEL || defaultGeminiConfig.model,
-    timeout: Number(process.env.NEXT_PUBLIC_GEMINI_TIMEOUT) || defaultGeminiConfig.timeout,
+    maxTokens: Number(process.env.NEXT_PUBLIC_GEMINI_MAX_TOKENS) || defaultGeminiConfig.maxTokens,
+    temperature: Number(process.env.NEXT_PUBLIC_GEMINI_TEMPERATURE) || defaultGeminiConfig.temperature,
+    topP: Number(process.env.NEXT_PUBLIC_GEMINI_TOP_P) || defaultGeminiConfig.topP,
+    topK: Number(process.env.NEXT_PUBLIC_GEMINI_TOP_K) || defaultGeminiConfig.topK,
   }
 }
 
-// Build headers for Gemini API requests
-export function buildGeminiHeaders(apiKey?: string): HeadersInit {
-  const config = getGeminiConfig()
-  const key = apiKey || config.apiKey
+// Convert image to base64 for API
+async function imageToBase64(imagePath: string): Promise<string> {
+  const fs = await import("fs")
+  const imageBuffer = fs.readFileSync(imagePath)
+  return imageBuffer.toString("base64")
+}
 
+// Build Gemini API request payload according to official documentation
+function buildGeminiRequest(
+  base64Image: string,
+  prompt: string,
+  config: GeminiConfig
+) {
   return {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${key}`,
-    Accept: "*/*",
+    contents: [
+      {
+        role: "user",
+        parts: [
+          {
+            text: prompt,
+          },
+          {
+            inline_data: {
+              mime_type: "image/jpeg",
+              data: base64Image,
+            },
+          },
+        ],
+      },
+    ],
+    generation_config: {
+      temperature: config.temperature,
+      top_p: config.topP,
+      top_k: config.topK,
+      max_output_tokens: config.maxTokens,
+      candidate_count: 1,
+    },
+    safety_settings: [
+      {
+        category: "HARM_CATEGORY_HARASSMENT",
+        threshold: "BLOCK_MEDIUM_AND_ABOVE",
+      },
+      {
+        category: "HARM_CATEGORY_HATE_SPEECH",
+        threshold: "BLOCK_MEDIUM_AND_ABOVE",
+      },
+      {
+        category: "HARM_CATEGORY_SEXUALLY_EXPLICIT",
+        threshold: "BLOCK_MEDIUM_AND_ABOVE",
+      },
+      {
+        category: "HARM_CATEGORY_DANGEROUS_CONTENT",
+        threshold: "BLOCK_MEDIUM_AND_ABOVE",
+      },
+    ],
   }
 }
 
+<<<<<<< HEAD
 // Validate Gemini API key
 export function validateGeminiApiKey(): boolean {
   const config = getGeminiConfig()
@@ -98,35 +149,143 @@ export async function callGeminiApi(request: GeminiRequest): Promise<GeminiRespo
 
   const controller = new AbortController()
   const timeoutId = setTimeout(() => controller.abort(), config.timeout)
+=======
+// Analyze crop image for disease detection using Gemini 2.0 Flash
+export async function analyzeCropDisease(imagePath: string): Promise<AnalysisReport> {
+  const config = getGeminiConfig()
+  
+  if (!config.apiKey) {
+    throw new Error("Gemini API key not configured")
+  }
+>>>>>>> 30d164bf3a8e706718d1f68967fa2c95b27983a6
 
   try {
-    const response = await fetch(url, {
+    // Convert image to base64
+    const base64Image = await imageToBase64(imagePath)
+    
+    // Create comprehensive prompt for crop disease analysis
+    const prompt = `You are an expert agricultural scientist and plant pathologist with 20+ years of experience in crop disease diagnosis and treatment. Analyze this crop image and provide a detailed disease analysis report.
+
+Please identify:
+1. The crop type/name (be specific about variety if possible)
+2. Any diseases or health issues present
+3. The severity level (low/medium/high/critical)
+4. Specific symptoms visible in the image
+5. Likely causes and contributing factors
+6. Treatment recommendations with specific products and dosages
+7. Prevention measures for future outbreaks
+8. Urgency of action needed
+9. Estimated yield loss percentage
+10. Cost range for treatment
+
+IMPORTANT: Include specific fertilizer recommendations in the treatments array. Mention:
+- NPK ratios (e.g., "NPK 20-20-20 fertilizer at 2kg per acre")
+- Organic fertilizers (e.g., "Compost tea application")
+- Micronutrient fertilizers (e.g., "Zinc sulfate at 5kg per hectare")
+- Timing and application methods
+
+Respond in the following JSON format ONLY (no additional text):
+{
+  "cropName": "string (specific crop name)",
+  "diseaseName": "string or 'healthy' if no disease",
+  "confidence": number (0-100),
+  "severity": "low|medium|high|critical",
+  "symptoms": ["array of specific symptoms"],
+  "causes": ["array of causes and contributing factors"],
+  "treatments": ["array of specific treatments with dosages including fertilizers"],
+  "prevention": ["array of prevention measures"],
+  "recommendations": ["array of actionable recommendations"],
+  "urgency": "immediate|within_week|within_month|monitor",
+  "estimatedYieldLoss": number (0-100),
+  "costOfTreatment": {
+    "low": number,
+    "high": number,
+    "currency": "USD"
+  }
+}
+
+If the crop appears healthy, indicate "healthy" as diseaseName and provide general care recommendations including appropriate fertilizers. Be precise and actionable in your analysis.`
+
+    const requestBody = buildGeminiRequest(base64Image, prompt, config)
+
+    const response = await fetch(`https://generativelanguage.googleapis.com/v1beta/models/${config.model}:generateContent?key=${config.apiKey}`, {
       method: "POST",
-      headers: buildGeminiHeaders(),
-      body: JSON.stringify({
-        model: config.model,
-        ...request,
-      }),
-      signal: controller.signal,
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(requestBody),
     })
 
-    clearTimeout(timeoutId)
-
     if (!response.ok) {
-      const errorText = await response.text()
-      throw new Error(`Gemini API error: ${response.status} ${response.statusText} - ${errorText}`)
+      const errorData = await response.json()
+      throw new Error(`Gemini API error: ${response.status} - ${errorData.error?.message || response.statusText}`)
     }
 
-    return await response.json()
-  } catch (error) {
-    clearTimeout(timeoutId)
-    if (error instanceof Error && error.name === "AbortError") {
-      throw new Error("Gemini API request timeout")
+    const data = await response.json()
+    
+    if (!data.candidates || !data.candidates[0] || !data.candidates[0].content) {
+      throw new Error("Invalid response from Gemini API")
     }
+
+    const responseText = data.candidates[0].content.parts[0].text
+    
+    // Parse JSON response
+    let analysisData: CropDiseaseAnalysis
+    try {
+      // Extract JSON from response (handle cases where response might have extra text)
+      const jsonMatch = responseText.match(/\{[\s\S]*\}/)
+      if (!jsonMatch) {
+        throw new Error("No JSON found in response")
+      }
+      analysisData = JSON.parse(jsonMatch[0])
+      
+      // Validate required fields
+      if (!analysisData.cropName || !analysisData.diseaseName) {
+        throw new Error("Invalid analysis data: missing required fields")
+      }
+    } catch (parseError) {
+      console.error("Failed to parse Gemini response:", responseText)
+      throw new Error("Failed to parse analysis response")
+    }
+
+    // Get image metadata
+    const sharp = await import("sharp")
+    const metadata = await sharp.default(imagePath).metadata()
+    const fs = await import("fs")
+    const stats = fs.statSync(imagePath)
+
+    // Create comprehensive report
+    const report: AnalysisReport = {
+      id: `analysis_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`,
+      timestamp: new Date().toISOString(),
+      imageInfo: {
+        filename: imagePath.split("/").pop() || "unknown",
+        size: stats.size,
+        dimensions: {
+          width: metadata.width || 0,
+          height: metadata.height || 0,
+        },
+        format: metadata.format || "unknown",
+      },
+      analysis: analysisData,
+      environmentalFactors: {
+        temperature: "20-30°C (estimated)",
+        humidity: "60-80% (estimated)",
+        soilCondition: "Well-drained (estimated)",
+        season: getCurrentSeason(),
+      },
+      reportGenerated: new Date().toISOString(),
+      version: "2.0.0",
+    }
+
+    return report
+  } catch (error) {
+    console.error("Crop disease analysis failed:", error)
     throw error
   }
 }
 
+<<<<<<< HEAD
 // Get demo analysis response
 export function getDemoAnalysisResponse(): string {
   const responses = [
@@ -173,173 +332,104 @@ export async function analyzeImageWithGemini(
     console.log("[v0] Falling back to demo analysis")
     return getDemoAnalysisResponse()
   }
+=======
+// Generate detailed PDF report
+export async function generateAnalysisReport(report: AnalysisReport): Promise<string> {
+  const reportText = `
+CROP DISEASE ANALYSIS REPORT
+============================
+
+Report ID: ${report.id}
+Generated: ${new Date(report.reportGenerated).toLocaleString()}
+
+IMAGE INFORMATION
+-----------------
+Filename: ${report.imageInfo.filename}
+Size: ${(report.imageInfo.size / 1024 / 1024).toFixed(2)} MB
+Dimensions: ${report.imageInfo.dimensions.width} x ${report.imageInfo.dimensions.height}
+Format: ${report.imageInfo.format}
+
+ANALYSIS RESULTS
+----------------
+Crop Name: ${report.analysis.cropName}
+Disease: ${report.analysis.diseaseName}
+Confidence: ${report.analysis.confidence}%
+Severity: ${report.analysis.severity.toUpperCase()}
+Urgency: ${report.analysis.urgency.replace("_", " ").toUpperCase()}
+
+SYMPTOMS
+--------
+${report.analysis.symptoms.map(s => `• ${s}`).join("\n")}
+
+CAUSES
+------
+${report.analysis.causes.map(c => `• ${c}`).join("\n")}
+
+TREATMENTS
+----------
+${report.analysis.treatments.map(t => `• ${t}`).join("\n")}
+
+PREVENTION
+----------
+${report.analysis.prevention.map(p => `• ${p}`).join("\n")}
+
+RECOMMENDATIONS
+---------------
+${report.analysis.recommendations.map(r => `• ${r}`).join("\n")}
+
+FINANCIAL IMPACT
+----------------
+Estimated Yield Loss: ${report.analysis.estimatedYieldLoss}%
+Treatment Cost Range: $${report.analysis.costOfTreatment.low} - $${report.analysis.costOfTreatment.high} ${report.analysis.costOfTreatment.currency}
+
+ENVIRONMENTAL FACTORS
+---------------------
+Temperature: ${report.environmentalFactors.temperature}
+Humidity: ${report.environmentalFactors.humidity}
+Soil Condition: ${report.environmentalFactors.soilCondition}
+Season: ${report.environmentalFactors.season}
+
+---
+Report generated by AgriSecure Hub using Gemini 2.0 Flash AI
+Version: ${report.version}
+  `
+
+  return reportText
+>>>>>>> 30d164bf3a8e706718d1f68967fa2c95b27983a6
 }
 
-// Generate crop health report using Gemini
-export async function generateCropHealthReport(data: {
-  cropType: string
-  symptoms: string[]
-  environmentalConditions: Record<string, any>
-  imageAnalysis?: string
-}): Promise<string> {
-  try {
-    const prompt = `
-As an agricultural AI expert, analyze the following crop health data and provide a comprehensive report:
+// Get current season based on date
+function getCurrentSeason(): string {
+  const month = new Date().getMonth()
+  if (month >= 2 && month <= 4) return "Spring"
+  if (month >= 5 && month <= 7) return "Summer"
+  if (month >= 8 && month <= 10) return "Fall"
+  return "Winter"
+}
 
-Crop Type: ${data.cropType}
-Observed Symptoms: ${data.symptoms.join(", ")}
-Environmental Conditions: ${JSON.stringify(data.environmentalConditions, null, 2)}
-${data.imageAnalysis ? `Image Analysis: ${data.imageAnalysis}` : ""}
-
-Please provide:
-1. Health assessment (1-100 scale)
-2. Disease identification (if any)
-3. Treatment recommendations
-4. Prevention strategies
-5. Expected recovery timeline
-
-Format the response as a structured report.
-`
-
-    const request: GeminiRequest = {
-      model: "google/gemini-2.0-flash",
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are an expert agricultural AI assistant specializing in crop health analysis and disease diagnosis.",
-        },
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-      max_tokens: 1500,
-      temperature: 0.2,
+// Batch analyze multiple images
+export async function batchAnalyzeCrops(imagePaths: string[]): Promise<AnalysisReport[]> {
+  const reports: AnalysisReport[] = []
+  
+  for (const imagePath of imagePaths) {
+    try {
+      const report = await analyzeCropDisease(imagePath)
+      reports.push(report)
+      console.log(`Analysis completed for: ${imagePath}`)
+    } catch (error) {
+      console.error(`Analysis failed for ${imagePath}:`, error)
+      // Continue with other images
     }
-
-    const response = await callGeminiApi(request)
-    return response.choices[0]?.message?.content || "Report generation failed"
-  } catch (error) {
-    console.error("[v0] Gemini report generation error:", error)
-    throw error
   }
+  
+  return reports
 }
 
-// Generate treatment recommendations using Gemini
-export async function generateTreatmentRecommendations(
-  diseaseType: string,
-  severity: string,
-  cropType: string,
-  fieldConditions: Record<string, any>,
-): Promise<string> {
-  try {
-    const prompt = `
-Provide detailed treatment recommendations for:
-
-Disease: ${diseaseType}
-Severity: ${severity}
-Crop: ${cropType}
-Field Conditions: ${JSON.stringify(fieldConditions, null, 2)}
-
-Include:
-1. Immediate actions required
-2. Chemical treatments (with specific products and dosages)
-3. Organic alternatives
-4. Application timing and methods
-5. Follow-up monitoring schedule
-6. Cost estimates
-7. Expected success rate
-
-Provide practical, actionable advice for farmers.
-`
-
-    const request: GeminiRequest = {
-      model: "google/gemini-2.0-flash",
-      messages: [
-        {
-          role: "system",
-          content: "You are a plant pathology expert providing treatment recommendations for crop diseases.",
-        },
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-      max_tokens: 1200,
-      temperature: 0.1,
-    }
-
-    const response = await callGeminiApi(request)
-    return response.choices[0]?.message?.content || "Treatment recommendations unavailable"
-  } catch (error) {
-    console.error("[v0] Gemini treatment recommendations error:", error)
-    throw error
-  }
-}
-
-// Analyze drone data using Gemini
-export async function analyzeDroneData(droneData: {
-  flightPath: Array<{ lat: number; lng: number; altitude: number }>
-  sensorReadings: Record<string, number[]>
-  imageCount: number
-  missionType: string
-}): Promise<string> {
-  try {
-    const prompt = `
-Analyze this drone agricultural survey data:
-
-Mission Type: ${droneData.missionType}
-Flight Path Points: ${droneData.flightPath.length}
-Images Captured: ${droneData.imageCount}
-Sensor Data: ${JSON.stringify(droneData.sensorReadings, null, 2)}
-
-Provide insights on:
-1. Coverage efficiency
-2. Data quality assessment
-3. Anomalies detected
-4. Recommendations for future flights
-5. Priority areas for follow-up
-`
-
-    const request: GeminiRequest = {
-      model: "google/gemini-2.0-flash",
-      messages: [
-        {
-          role: "system",
-          content: "You are a precision agriculture specialist analyzing drone survey data.",
-        },
-        {
-          role: "user",
-          content: prompt,
-        },
-      ],
-      max_tokens: 800,
-      temperature: 0.3,
-    }
-
-    const response = await callGeminiApi(request)
-    return response.choices[0]?.message?.content || "Drone data analysis unavailable"
-  } catch (error) {
-    console.error("[v0] Gemini drone analysis error:", error)
-    throw error
-  }
-}
-
-// Demo response for testing when API key is not available
-export function getDemoGeminiResponse(type: "image" | "report" | "treatment" | "drone"): string {
-  const demoResponses = {
-    image:
-      "Demo Analysis: Crop appears healthy with 85% vegetation coverage. Minor nutrient deficiency detected in lower leaves. Recommend nitrogen supplementation.",
-    report:
-      "Demo Report: Overall crop health: 87/100. No major diseases detected. Irrigation levels optimal. Harvest window: 14-21 days.",
-    treatment:
-      "Demo Treatment: Apply balanced fertilizer (10-10-10) at 200kg/hectare. Monitor weekly for pest activity. Expected improvement in 7-10 days.",
-    drone:
-      "Demo Drone Analysis: Flight coverage 95% complete. 247 images captured. Anomaly detected in sector 3 - investigate irrigation system.",
-  }
-
-  return demoResponses[type] || "Demo response not available"
+// Get analysis history (would integrate with database)
+export async function getAnalysisHistory(limit = 10): Promise<AnalysisReport[]> {
+  // This would fetch from database
+  // For now, return empty array
+  return []
 }
 
 export default {
@@ -351,4 +441,8 @@ export default {
   getDemoGeminiResponse,
   getDemoAnalysisResponse,
   validateGeminiApiKey,
+  analyzeCropDisease,
+  generateAnalysisReport,
+  batchAnalyzeCrops,
+  getAnalysisHistory,
 }

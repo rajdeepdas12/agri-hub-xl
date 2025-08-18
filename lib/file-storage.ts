@@ -73,6 +73,19 @@ export async function initializeStorage() {
       console.log("[v0] Created storage directory:", dir)
     } catch (error) {
       console.error("[v0] Error creating directory:", dir, error)
+      // Don't throw error, just log it and continue
+    }
+  }
+  
+  // Verify directories are writable
+  for (const dir of directories) {
+    try {
+      const testFile = path.join(dir, '.test-write')
+      await fs.writeFile(testFile, 'test')
+      await fs.unlink(testFile)
+      console.log("[v0] Directory is writable:", dir)
+    } catch (error) {
+      console.error("[v0] Directory is not writable:", dir, error)
     }
   }
 }
