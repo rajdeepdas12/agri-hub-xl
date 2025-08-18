@@ -39,8 +39,8 @@ export async function POST(request: NextRequest) {
       // Generate a simple PDF using pdf-lib
       const { PDFDocument, StandardFonts, rgb } = await import("pdf-lib") as any
       const pdfDoc = await PDFDocument.create()
-      const page = pdfDoc.addPage([595.28, 841.89]) // A4 size in points
-      const { width, height } = page.getSize()
+      let currentPage = pdfDoc.addPage([595.28, 841.89]) // A4 size in points
+      let { width, height } = currentPage.getSize()
 
       const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
       const title = "Crop Disease Analysis Report"
@@ -48,11 +48,11 @@ export async function POST(request: NextRequest) {
       const analyzedAt = `Analyzed At: ${new Date(photo.updated_at || Date.now()).toLocaleString()}`
 
       let cursorY = height - 50
-      page.drawText(title, { x: 50, y: cursorY, size: 18, font, color: rgb(0, 0.45, 0) })
+      currentPage.drawText(title, { x: 50, y: cursorY, size: 18, font, color: rgb(0, 0.45, 0) })
       cursorY -= 24
-      page.drawText(subtitle, { x: 50, y: cursorY, size: 12, font, color: rgb(0.2, 0.2, 0.2) })
+      currentPage.drawText(subtitle, { x: 50, y: cursorY, size: 12, font, color: rgb(0.2, 0.2, 0.2) })
       cursorY -= 18
-      page.drawText(analyzedAt, { x: 50, y: cursorY, size: 10, font, color: rgb(0.3, 0.3, 0.3) })
+      currentPage.drawText(analyzedAt, { x: 50, y: cursorY, size: 10, font, color: rgb(0.3, 0.3, 0.3) })
 
       cursorY -= 28
       const ar = photo.analysis_results
@@ -99,13 +99,15 @@ export async function POST(request: NextRequest) {
           cursorY -= 14
           if (cursorY < 60) {
             // add new page
-            const p = pdfDoc.addPage([595.28, 841.89])
-            cursorY = p.getSize().height - 50
-            p.drawText("(continued)", { x: 50, y: cursorY, size: 10, font, color: rgb(0.5, 0.5, 0.5) })
+            currentPage = pdfDoc.addPage([595.28, 841.89])
+            const size = currentPage.getSize()
+            width = size.width
+            height = size.height
+            cursorY = height - 50
+            currentPage.drawText("(continued)", { x: 50, y: cursorY, size: 10, font, color: rgb(0.5, 0.5, 0.5) })
             cursorY -= 18
-            ;(page as any) = p
           }
-          page.drawText(ch, { x: 50, y: cursorY, size: 11, font, color: rgb(0, 0, 0) })
+          currentPage.drawText(ch, { x: 50, y: cursorY, size: 11, font, color: rgb(0, 0, 0) })
         }
       }
 
