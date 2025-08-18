@@ -9,7 +9,7 @@ export interface ApiConfig {
 // Demo API configuration with sample key
 export const defaultApiConfig: ApiConfig = {
   baseUrl: "https://api.agrisecure.com",
-  apiKey: "AIzaSyB9v75XZMdfvTs23g4M8Y3aSiI5Z5lRohA",
+  apiKey: "AIzaSyDPHkQqGg-SKXd0PitnSwD4qzWhGnLiWc",
   version: "v1",
   timeout: 30000, // 30 seconds
 }

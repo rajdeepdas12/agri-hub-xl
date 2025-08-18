@@ -37,11 +37,11 @@ export interface PestApiResponse {
 
 // Demo API Keys - Replace with real keys in production
 const EXTERNAL_API_KEYS = {
-  weather: process.env.NEXT_PUBLIC_WEATHER_API_KEY || "AIzaSyB9v75XZMdfvTs23g4M8Y3aSiI5Z5lRohA",
-  soil: process.env.NEXT_PUBLIC_SOIL_API_KEY || "AIzaSyB9v75XZMdfvTs23g4M8Y3aSiI5Z5lRohA",
-  market: process.env.NEXT_PUBLIC_MARKET_API_KEY || "AIzaSyB9v75XZMdfvTs23g4M8Y3aSiI5Z5lRohA",
-  pest: process.env.NEXT_PUBLIC_PEST_API_KEY || "AIzaSyB9v75XZMdfvTs23g4M8Y3aSiI5Z5lRohA",
-  satellite: process.env.NEXT_PUBLIC_SATELLITE_API_KEY || "AIzaSyB9v75XZMdfvTs23g4M8Y3aSiI5Z5lRohA",
+  weather: process.env.NEXT_PUBLIC_WEATHER_API_KEY || "AIzaSyDPHkQqGg-SKXd0PitnSwD4qzWhGnLiWc",
+  soil: process.env.NEXT_PUBLIC_SOIL_API_KEY || "AIzaSyDPHkQqGg-SKXd0PitnSwD4qzWhGnLiWc",
+  market: process.env.NEXT_PUBLIC_MARKET_API_KEY || "AIzaSyDPHkQqGg-SKXd0PitnSwD4qzWhGnLiWc",
+  pest: process.env.NEXT_PUBLIC_PEST_API_KEY || "AIzaSyDPHkQqGg-SKXd0PitnSwD4qzWhGnLiWc",
+  satellite: process.env.NEXT_PUBLIC_SATELLITE_API_KEY || "AIzaSyDPHkQqGg-SKXd0PitnSwD4qzWhGnLiWc",
 }
 
 // Base configuration for external APIs
@@ -112,7 +112,7 @@ async function makeExternalApiRequest<T>(
 // Weather API functions
 export async function getWeatherData(latitude: number, longitude: number): Promise<WeatherApiResponse> {
   // Demo data for testing
-  if (EXTERNAL_API_KEYS.weather.includes("AIzaSyB9v75XZMdfvTs23g4M8Y3aSiI5Z5lRohA")) {
+  if (EXTERNAL_API_KEYS.weather.includes("AIzaSyDPHkQqGg-SKXd0PitnSwD4qzWhGnLiWc")) {
     return {
       temperature: 24,
       humidity: 65,

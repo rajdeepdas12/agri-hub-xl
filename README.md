@@ -55,8 +55,8 @@ cp .env.example .env.local
 
 The API key is already configured in the example file:
 ```env
-NEXT_PUBLIC_GEMINI_API_KEY=AIzaSyBQIExHb__eENyQjeuLvxhFS7994yaMWAY
-GEMINI_API_KEY=AIzaSyBQIExHb__eENyQjeuLvxhFS7994yaMWAY
+NEXT_PUBLIC_GEMINI_API_KEY=AIzaSyDPHkQqGg-SKXd0PitnSwD4qzWhGnLiWc
+GEMINI_API_KEY=AIzaSyDPHkQqGg-SKXd0PitnSwD4qzWhGnLiWc
 ```
 
 ### 2. Install Dependencies

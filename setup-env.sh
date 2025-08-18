@@ -16,8 +16,8 @@ fi
 
 echo ""
 echo "🔑 API Key Configuration:"
-echo "   NEXT_PUBLIC_GEMINI_API_KEY=AIzaSyBQIExHb__eENyQjeuLvxhFS7994yaMWAY"
-echo "   GEMINI_API_KEY=AIzaSyBQIExHb__eENyQjeuLvxhFS7994yaMWAY"
+echo "   NEXT_PUBLIC_GEMINI_API_KEY=AIzaSyDPHkQqGg-SKXd0PitnSwD4qzWhGnLiWc"
+echo "   GEMINI_API_KEY=AIzaSyDPHkQqGg-SKXd0PitnSwD4qzWhGnLiWc"
 echo ""
 echo "✅ Environment setup complete!"
 echo ""

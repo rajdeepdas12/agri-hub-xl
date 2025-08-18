@@ -64,7 +64,7 @@ export interface PhotoApiConfig {
 // Default photo API configuration
 export const defaultPhotoConfig: PhotoApiConfig = {
   baseUrl: "https://api.agrisecure.com/photos",
-  apiKey: "AIzaSyB9v75XZMdfvTs23g4M8Y3aSiI5Z5lRohA",
+  apiKey: "AIzaSyDPHkQqGg-SKXd0PitnSwD4qzWhGnLiWc",
   maxFileSize: 10 * 1024 * 1024, // 10MB
   allowedFormats: ["jpg", "jpeg", "png", "webp", "tiff"],
   compressionQuality: 0.8,
