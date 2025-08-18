@@ -54,14 +54,14 @@ export async function POST(request: NextRequest) {
     const payload = {
       images: [imageBase64],
       modifiers: ["crops_fast", "similar_images"],
-      plant_details: ["common_names", "url", "taxonomy", "description"],
+      plant_details: ["common_names", "url", "wiki_description"],
     }
 
     const resp = await fetch(`${apiUrl}/identification`, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json",
+        "Api-Key": apiKey,
       },
       body: JSON.stringify(payload),
     })
