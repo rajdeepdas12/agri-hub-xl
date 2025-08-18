@@ -28,7 +28,9 @@ export async function POST(request: NextRequest) {
     let filename: string
     if (base64) {
       imageBase64 = base64.startsWith("data:") ? base64.split(",")[1] : base64
-      if (!imageBase64 || imageBase64.trim().length < 100) {
+      // Sanitize: remove whitespace/newlines and non-base64 chars
+      imageBase64 = imageBase64.replace(/\s/g, "").replace(/[^A-Za-z0-9+/=]/g, "")
+      if (!imageBase64 || imageBase64.length < 256) {
         return NextResponse.json({ error: "Invalid base64 image data" }, { status: 400 })
       }
       filename = `upload_${Date.now()}.jpg`
@@ -37,8 +39,8 @@ export async function POST(request: NextRequest) {
       if (!photo) return NextResponse.json({ error: "Photo not found" }, { status: 404 })
       const fs = await import("fs")
       const buf = fs.readFileSync(photo.file_path)
-      imageBase64 = buf.toString("base64")
-      if (!imageBase64 || imageBase64.trim().length < 100) {
+      imageBase64 = buf.toString("base64").replace(/\s/g, "")
+      if (!imageBase64 || imageBase64.length < 256) {
         return NextResponse.json({ error: "Failed to read image data as base64" }, { status: 500 })
       }
       filename = photo.filename
@@ -56,6 +58,12 @@ export async function POST(request: NextRequest) {
       modifiers: ["crops_fast", "similar_images"],
       plant_details: ["common_names", "url", "wiki_description"],
     }
+
+    console.log("[v0] Plant.id payload sizes:", {
+      imageLength: imageBase64.length,
+      modifiers: payload.modifiers,
+      details: payload.plant_details,
+    })
 
     const resp = await fetch(`${apiUrl}/identification`, {
       method: "POST",
