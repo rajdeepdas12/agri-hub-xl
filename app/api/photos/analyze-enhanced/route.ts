@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { analyzeCropDisease, generateAnalysisReport, batchAnalyzeCrops } from "@/lib/gemini-api"
+import { generateAnalysisReport } from "@/lib/gemini-api"
+import { analyzeWithPlantId } from "@/lib/plant-id"
 import { LocalDatabaseService } from "@/lib/local-database"
 import FileStorage from "@/lib/file-storage"
 
@@ -48,10 +49,10 @@ export async function POST(request: NextRequest) {
       filename = photo.filename
     }
 
-    console.log("[v0] Analyzing image with enhanced Gemini 2.0 Flash:", imagePath)
+    console.log("[v0] Analyzing image with Plant.id (enhanced):", imagePath)
 
-    // Perform comprehensive crop disease analysis
-    const analysis = await analyzeCropDisease(imagePath)
+    // Perform comprehensive crop disease analysis using Plant.id
+    const analysis = await analyzeWithPlantId(imagePath)
     
     // Generate detailed report if requested
     let report = null
@@ -95,7 +96,7 @@ export async function POST(request: NextRequest) {
       imageInfo: analysis.imageInfo,
       environmentalFactors: analysis.environmentalFactors,
       filename,
-      message: "Enhanced crop disease analysis completed successfully using Gemini 2.0 Flash",
+      message: "Enhanced crop disease analysis completed successfully using Plant.id",
     }
 
     if (report) {

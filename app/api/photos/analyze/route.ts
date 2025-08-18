@@ -1,5 +1,6 @@
 import { type NextRequest, NextResponse } from "next/server"
-import { analyzeCropDisease, generateAnalysisReport, batchAnalyzeCrops } from "@/lib/gemini-api"
+import { generateAnalysisReport } from "@/lib/gemini-api"
+import { analyzeWithPlantId } from "@/lib/plant-id"
 import { LocalDatabaseService } from "@/lib/local-database"
 
 // Configure for large file uploads
@@ -38,10 +39,10 @@ export async function POST(request: NextRequest) {
       filename = photo.filename
     }
 
-    console.log("[v0] Analyzing image:", imagePath)
+    console.log("[v0] Analyzing image with Plant.id:", imagePath)
 
-    // Perform comprehensive crop disease analysis
-    const analysis = await analyzeCropDisease(imagePath)
+    // Perform comprehensive crop disease analysis using Plant.id
+    const analysis = await analyzeWithPlantId(imagePath)
     
     // Generate detailed report
     const report = await generateAnalysisReport(analysis)

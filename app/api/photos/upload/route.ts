@@ -2,7 +2,8 @@ import { type NextRequest, NextResponse } from "next/server"
 import { LocalDatabaseService, checkLocalDatabaseConnection } from "@/lib/local-database"
 import FileStorage from "@/lib/file-storage"
 import ImageProcessing from "@/lib/image-processing"
-import { analyzeCropDisease, generateAnalysisReport } from "@/lib/gemini-api"
+import { generateAnalysisReport } from "@/lib/gemini-api"
+import { analyzeWithPlantId } from "@/lib/plant-id"
 
 // Configure for large file uploads
 export const maxDuration = 300 // 5 minutes
@@ -22,12 +23,12 @@ export async function POST(request: NextRequest) {
       // Continue anyway, the upload might still work
     }
 
-    // Check Gemini API key - but don't fail, use fallback instead
-    const hasGeminiKey = process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY
-    if (!hasGeminiKey) {
-      console.log("[v0] Gemini API key not configured - will use demo mode")
+    // Check Plant.id API key - but don't fail, we have fallbacks
+    const hasPlantIdKey = process.env.PLANT_ID_API_KEY || process.env.NEXT_PUBLIC_PLANT_ID_API_KEY
+    if (!hasPlantIdKey) {
+      console.log("[v0] Plant.id API key not configured - will use fallback analysis if needed")
     } else {
-      console.log("[v0] Gemini API key found - will attempt real analysis")
+      console.log("[v0] Plant.id API key found - will attempt real analysis")
     }
 
     console.log("[v0] Checking local database connection...")
@@ -151,14 +152,14 @@ export async function POST(request: NextRequest) {
 
       if (file.type.startsWith("image/")) {
         try {
-          console.log("[v0] About to call Gemini 2.0 Flash for crop disease analysis...")
-          
-          // Use Gemini 2.0 Flash for comprehensive crop disease analysis
-          const geminiAnalysis = await analyzeCropDisease(savedFile.filepath)
-          console.log("[v0] Gemini analysis completed:", geminiAnalysis)
+          console.log("[v0] About to call Plant.id for crop disease analysis...")
+
+          // Use Plant.id for comprehensive crop disease analysis
+          const plantIdAnalysis = await analyzeWithPlantId(savedFile.filepath)
+          console.log("[v0] Plant.id analysis completed:", plantIdAnalysis)
 
           // Generate detailed report
-          const reportText = await generateAnalysisReport(geminiAnalysis)
+          const reportText = await generateAnalysisReport(plantIdAnalysis)
           console.log("[v0] Analysis report generated")
 
           // Combine Gemini analysis with basic image processing
@@ -166,20 +167,20 @@ export async function POST(request: NextRequest) {
           
           const combinedAnalysis = {
             ...basicAnalysis,
-            geminiAnalysis,
+            plantIdAnalysis,
             report: reportText,
-            cropName: geminiAnalysis.analysis.cropName,
-            diseaseName: geminiAnalysis.analysis.diseaseName,
-            severity: geminiAnalysis.analysis.severity,
-            confidence: geminiAnalysis.analysis.confidence,
-            urgency: geminiAnalysis.analysis.urgency,
-            estimatedYieldLoss: geminiAnalysis.analysis.estimatedYieldLoss,
-            treatments: geminiAnalysis.analysis.treatments,
-            recommendations: geminiAnalysis.analysis.recommendations,
-            symptoms: geminiAnalysis.analysis.symptoms,
-            causes: geminiAnalysis.analysis.causes,
-            prevention: geminiAnalysis.analysis.prevention,
-            costOfTreatment: geminiAnalysis.analysis.costOfTreatment,
+            cropName: plantIdAnalysis.analysis.cropName,
+            diseaseName: plantIdAnalysis.analysis.diseaseName,
+            severity: plantIdAnalysis.analysis.severity,
+            confidence: plantIdAnalysis.analysis.confidence,
+            urgency: plantIdAnalysis.analysis.urgency,
+            estimatedYieldLoss: plantIdAnalysis.analysis.estimatedYieldLoss,
+            treatments: plantIdAnalysis.analysis.treatments,
+            recommendations: plantIdAnalysis.analysis.recommendations,
+            symptoms: plantIdAnalysis.analysis.symptoms,
+            causes: plantIdAnalysis.analysis.causes,
+            prevention: plantIdAnalysis.analysis.prevention,
+            costOfTreatment: plantIdAnalysis.analysis.costOfTreatment,
           }
 
           console.log("[v0] About to update photo analysis in database...")
@@ -188,7 +189,7 @@ export async function POST(request: NextRequest) {
           
           analysisResult = combinedAnalysis
         } catch (error) {
-          console.error("[v0] Gemini analysis failed:", error)
+          console.error("[v0] Plant.id analysis failed:", error)
           console.error("[v0] Analysis error stack:", error instanceof Error ? error.stack : "No stack")
           
           // Provide fallback analysis instead of marking as failed
@@ -245,7 +246,7 @@ export async function POST(request: NextRequest) {
         captureDate: new Date(),
         analysisStatus: photo?.analysis_status || "pending",
         analysisResults: photo?.analysis_results,
-        message: "Photo uploaded and analyzed successfully with Gemini 2.0 Flash",
+        message: "Photo uploaded and analyzed successfully with Plant.id",
         isPreviewMode: savedFile.isBase64 || false,
         // Include comprehensive analysis data
         cropAnalysis: analysisResult ? {

@@ -2,12 +2,12 @@ import { NextResponse } from "next/server"
 
 export async function GET() {
   const config = {
-    geminiApiKey: {
-      serverSide: !!process.env.GEMINI_API_KEY,
-      clientSide: !!process.env.NEXT_PUBLIC_GEMINI_API_KEY,
-      value: process.env.GEMINI_API_KEY || process.env.NEXT_PUBLIC_GEMINI_API_KEY ? "Configured" : "Not configured"
+    plantIdApiKey: {
+      serverSide: !!process.env.PLANT_ID_API_KEY,
+      clientSide: !!process.env.NEXT_PUBLIC_PLANT_ID_API_KEY,
+      value: process.env.PLANT_ID_API_KEY || process.env.NEXT_PUBLIC_PLANT_ID_API_KEY ? "Configured" : "Not configured"
     },
-    geminiModel: process.env.NEXT_PUBLIC_GEMINI_MODEL || "gemini-2.0-flash-exp",
+    plantIdApiUrl: process.env.PLANT_ID_API_URL || "https://plant.id/api/v3",
     uploadDir: process.env.UPLOAD_DIR || "./uploads",
     maxFileSize: process.env.MAX_FILE_SIZE || "20971520",
     nodeEnv: process.env.NODE_ENV || "development",
