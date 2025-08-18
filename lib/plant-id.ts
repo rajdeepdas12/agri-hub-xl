@@ -10,7 +10,10 @@ interface PlantIdConfig {
 }
 
 const defaultPlantIdConfig: PlantIdConfig = {
-  apiKey: process.env.PLANT_ID_API_KEY || process.env.NEXT_PUBLIC_PLANT_ID_API_KEY || "",
+  apiKey:
+    process.env.PLANT_ID_API_KEY ||
+    process.env.NEXT_PUBLIC_PLANT_ID_API_KEY ||
+    "4WqopttRYAnqww061goOgqIbNMwXwWjfMZ18QEVelt2T056kKi",
   baseUrl: process.env.PLANT_ID_API_URL || "https://plant.id/api/v3",
   timeoutMs: 30000,
 }
