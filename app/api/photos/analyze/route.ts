@@ -1,6 +1,5 @@
 import { type NextRequest, NextResponse } from "next/server"
 import { generateAnalysisReport } from "@/lib/gemini-api"
-import { analyzeWithPlantId } from "@/lib/plant-id"
 import { LocalDatabaseService } from "@/lib/local-database"
 
 // Configure for large file uploads
@@ -11,58 +10,85 @@ export async function POST(request: NextRequest) {
   console.log("[v0] Crop analysis request received")
 
   try {
-    const formData = await request.formData()
-    const file = formData.get("file") as File
-    const photoId = formData.get("photoId") as string
-    const userId = (formData.get("userId") as string) || "1"
-
-    if (!file && !photoId) {
-      return NextResponse.json({ error: "Either file or photoId must be provided" }, { status: 400 })
+    const body = await request.json().catch(() => null)
+    let formData: FormData | null = null
+    if (!body) {
+      formData = await request.formData().catch(() => null)
     }
 
-    let imagePath: string
-    let filename: string
+    const photoId = (body?.photoId as string) || (formData?.get("photoId") as string)
+    const base64 = (body?.imageBase64 as string) || (formData?.get("imageBase64") as string)
+    const userId = (body?.userId as string) || (formData?.get("userId") as string) || "1"
 
-    if (file) {
-      // Handle direct file upload
-      const { saveUploadedFile } = await import("@/lib/file-storage")
-      const savedFile = await saveUploadedFile(file, "photos", Number.parseInt(userId))
-      imagePath = savedFile.filepath
-      filename = savedFile.filename
+    if (!photoId && !base64) {
+      return NextResponse.json({ error: "Provide either photoId or imageBase64" }, { status: 400 })
+    }
+
+    let imageBase64: string
+    let filename: string
+    if (base64) {
+      imageBase64 = base64.startsWith("data:") ? base64.split(",")[1] : base64
+      filename = `upload_${Date.now()}.jpg`
     } else {
-      // Get existing photo from database
-      const photo = await LocalDatabaseService.getPhotoById(Number.parseInt(photoId))
-      if (!photo) {
-        return NextResponse.json({ error: "Photo not found" }, { status: 404 })
-      }
-      imagePath = photo.file_path
+      const photo = await LocalDatabaseService.getPhotoById(Number.parseInt(photoId as string))
+      if (!photo) return NextResponse.json({ error: "Photo not found" }, { status: 404 })
+      const fs = await import("fs")
+      const buf = fs.readFileSync(photo.file_path)
+      imageBase64 = buf.toString("base64")
       filename = photo.filename
     }
 
-    console.log("[v0] Analyzing image with Plant.id:", imagePath)
+    // Call Plant.id v3 /identification per spec
+    const apiKey = process.env.PLANT_ID_API_KEY
+    const apiUrl = process.env.PLANT_ID_API_URL || "https://plant.id/api/v3"
+    if (!apiKey) {
+      return NextResponse.json({ error: "Plant.id API key not configured" }, { status: 500 })
+    }
 
-    // Perform comprehensive crop disease analysis using Plant.id
-    const analysis = await analyzeWithPlantId(imagePath)
+    const payload = {
+      images: [imageBase64],
+      modifiers: ["crops_fast", "similar_images"],
+      plant_details: ["common_names", "url", "taxonomy", "description"],
+    }
+
+    const resp = await fetch(`${apiUrl}/identification`, {
+      method: "POST",
+      headers: {
+        Authorization: `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(payload),
+    })
+
+    if (!resp.ok) {
+      const text = await resp.text()
+      return NextResponse.json(
+        { error: "Plant.id request failed", status: resp.status, details: text },
+        { status: 502 },
+      )
+    }
+
+    const plantResult = await resp.json()
     
     // Generate detailed report
-    const report = await generateAnalysisReport(analysis)
+    const report = JSON.stringify(plantResult, null, 2)
 
     // Update database if photoId was provided
     if (photoId) {
       await LocalDatabaseService.updatePhotoAnalysis(
         Number.parseInt(photoId),
         {
-          ...analysis,
+          plantId: plantResult,
           report,
           lastAnalyzed: new Date().toISOString(),
         },
-        "completed"
+        "completed",
       )
     }
 
     return NextResponse.json({
       success: true,
-      analysis,
+      plantId: plantResult,
       report,
       filename,
       message: "Crop disease analysis completed successfully",
