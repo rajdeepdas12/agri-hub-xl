@@ -460,10 +460,6 @@ export async function getAnalysisHistory(limit = 10): Promise<AnalysisReport[]> 
 export default {
   callGeminiApi,
   analyzeImageWithGemini,
-  generateCropHealthReport,
-  generateTreatmentRecommendations,
-  analyzeDroneData,
-  getDemoGeminiResponse,
   getDemoAnalysisResponse,
   validateGeminiApiKey,
   analyzeCropDisease,
