@@ -124,24 +124,47 @@ export async function analyzeWithPlantId(imagePath: string): Promise<AnalysisRep
   }
 
   const base64 = await fileToBase64(imagePath)
-  const payload = buildPlantIdRequest(base64)
+  const payloads = [
+    buildPlantIdRequest(base64),
+    buildPlantIdRequest(`data:image/jpeg;base64,${base64}`),
+  ]
 
   const controller = new AbortController()
   const timeout = setTimeout(() => controller.abort(), config.timeoutMs)
 
   try {
-    const response = await fetch(`${config.baseUrl}/identification`, {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        "Api-Key": config.apiKey,
-      },
-      body: JSON.stringify(payload),
-      signal: controller.signal,
-    })
+    let response: Response | null = null
+    const endpoints = [
+      `${config.baseUrl}/identification`,
+      `${config.baseUrl}/identify`,
+    ]
+
+    for (const endpoint of endpoints) {
+      for (const payload of payloads) {
+        try {
+          const r = await fetch(endpoint, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+              "Api-Key": config.apiKey,
+            },
+            body: JSON.stringify(payload),
+            signal: controller.signal,
+          })
+          if (r.ok) {
+            response = r
+            break
+          }
+        } catch (e) {
+          // try next
+        }
+      }
+      if (response) break
+    }
 
     clearTimeout(timeout)
 
+    if (!response) throw new Error("Plant.id API request failed for all fallbacks")
     if (!response.ok) {
       const text = await response.text()
       throw new Error(`Plant.id API error: ${response.status} ${response.statusText} - ${text}`)

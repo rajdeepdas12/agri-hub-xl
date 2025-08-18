@@ -1081,6 +1081,12 @@ export default function AgriDashboard() {
               </div>
             </div>
             <div className="flex items-center gap-2 sm:gap-3">
+              <Link
+                href="/photos"
+                className="hidden sm:inline-flex items-center rounded bg-blue-600 text-white px-3 py-1.5 hover:bg-blue-700"
+              >
+                Photos
+              </Link>
               <ThemeToggle />
               <Button
                 variant="outline"
@@ -1666,6 +1672,26 @@ export default function AgriDashboard() {
                               }}
                             >
                               <Eye className="w-4 h-4" />
+                            </Button>
+                          )}
+                          {photo.analysisStatus !== "completed" && (
+                            <Button
+                              variant="outline"
+                              size="sm"
+                              className="h-8 bg-transparent"
+                              onClick={async () => {
+                                try {
+                                  const form = new FormData()
+                                  form.append("photoId", String(photo.id))
+                                  const resp = await fetch("/api/photos/analyze", { method: "POST", body: form })
+                                  if (!resp.ok) throw new Error(`Analyze failed (${resp.status})`)
+                                  await fetchRecentPhotos()
+                                } catch (e) {
+                                  alert(e instanceof Error ? e.message : "Analyze failed")
+                                }
+                              }}
+                            >
+                              Analyze
                             </Button>
                           )}
                           {photo.analysisStatus === "completed" && (
