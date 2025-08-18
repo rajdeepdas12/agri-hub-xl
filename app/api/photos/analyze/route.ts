@@ -28,6 +28,9 @@ export async function POST(request: NextRequest) {
     let filename: string
     if (base64) {
       imageBase64 = base64.startsWith("data:") ? base64.split(",")[1] : base64
+      if (!imageBase64 || imageBase64.trim().length < 100) {
+        return NextResponse.json({ error: "Invalid base64 image data" }, { status: 400 })
+      }
       filename = `upload_${Date.now()}.jpg`
     } else {
       const photo = await LocalDatabaseService.getPhotoById(Number.parseInt(photoId as string))
@@ -35,6 +38,9 @@ export async function POST(request: NextRequest) {
       const fs = await import("fs")
       const buf = fs.readFileSync(photo.file_path)
       imageBase64 = buf.toString("base64")
+      if (!imageBase64 || imageBase64.trim().length < 100) {
+        return NextResponse.json({ error: "Failed to read image data as base64" }, { status: 500 })
+      }
       filename = photo.filename
     }
 
@@ -61,9 +67,15 @@ export async function POST(request: NextRequest) {
     })
 
     if (!resp.ok) {
-      const text = await resp.text()
+      let details: any = null
+      try {
+        details = await resp.json()
+      } catch {
+        details = await resp.text()
+      }
+      console.error("[v0] Plant.id error:", resp.status, details)
       return NextResponse.json(
-        { error: "Plant.id request failed", status: resp.status, details: text },
+        { error: "Plant.id request failed", status: resp.status, details },
         { status: 502 },
       )
     }
