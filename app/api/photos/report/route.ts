@@ -36,11 +36,83 @@ export async function POST(request: NextRequest) {
       contentType = "application/json"
       filename = `${photo.filename}_analysis.json`
     } else if (format === "pdf") {
-      // For PDF generation, you would integrate with a library like puppeteer or jsPDF
-      // For now, return text format
-      reportContent = photo.analysis_results.report || "Report not available"
-      contentType = "text/plain"
-      filename = `${photo.filename}_analysis.txt`
+      // Generate a simple PDF using pdf-lib
+      const { PDFDocument, StandardFonts, rgb } = await import("pdf-lib") as any
+      const pdfDoc = await PDFDocument.create()
+      const page = pdfDoc.addPage([595.28, 841.89]) // A4 size in points
+      const { width, height } = page.getSize()
+
+      const font = await pdfDoc.embedFont(StandardFonts.Helvetica)
+      const title = "Crop Disease Analysis Report"
+      const subtitle = `Photo: ${photo.original_name || photo.filename}`
+      const analyzedAt = `Analyzed At: ${new Date(photo.updated_at || Date.now()).toLocaleString()}`
+
+      let cursorY = height - 50
+      page.drawText(title, { x: 50, y: cursorY, size: 18, font, color: rgb(0, 0.45, 0) })
+      cursorY -= 24
+      page.drawText(subtitle, { x: 50, y: cursorY, size: 12, font, color: rgb(0.2, 0.2, 0.2) })
+      cursorY -= 18
+      page.drawText(analyzedAt, { x: 50, y: cursorY, size: 10, font, color: rgb(0.3, 0.3, 0.3) })
+
+      cursorY -= 28
+      const ar = photo.analysis_results
+      const lines: string[] = []
+      if (ar) {
+        if (ar.cropName) lines.push(`Crop: ${ar.cropName}`)
+        if (ar.diseaseName) lines.push(`Disease: ${ar.diseaseName}`)
+        if (ar.severity) lines.push(`Severity: ${ar.severity}`)
+        if (ar.confidence != null) lines.push(`Confidence: ${ar.confidence}%`)
+        if (ar.urgency) lines.push(`Urgency: ${ar.urgency}`)
+      }
+      lines.push("")
+      lines.push("Symptoms:")
+      ;(ar?.symptoms || []).forEach((s: string) => lines.push(` • ${s}`))
+      lines.push("")
+      lines.push("Treatments:")
+      ;(ar?.treatments || []).forEach((t: string) => lines.push(` • ${t}`))
+      lines.push("")
+      lines.push("Recommendations:")
+      ;(ar?.recommendations || []).forEach((r: string) => lines.push(` • ${r}`))
+
+      const maxWidth = width - 100
+      const wrapText = (text: string, size = 11) => {
+        const words = text.split(" ")
+        let line = ""
+        const wrapped: string[] = []
+        for (const w of words) {
+          const test = line ? `${line} ${w}` : w
+          const wWidth = font.widthOfTextAtSize(test, size)
+          if (wWidth > maxWidth) {
+            if (line) wrapped.push(line)
+            line = w
+          } else {
+            line = test
+          }
+        }
+        if (line) wrapped.push(line)
+        return wrapped
+      }
+
+      for (const text of lines) {
+        const chunks = wrapText(text)
+        for (const ch of chunks) {
+          cursorY -= 14
+          if (cursorY < 60) {
+            // add new page
+            const p = pdfDoc.addPage([595.28, 841.89])
+            cursorY = p.getSize().height - 50
+            p.drawText("(continued)", { x: 50, y: cursorY, size: 10, font, color: rgb(0.5, 0.5, 0.5) })
+            cursorY -= 18
+            ;(page as any) = p
+          }
+          page.drawText(ch, { x: 50, y: cursorY, size: 11, font, color: rgb(0, 0, 0) })
+        }
+      }
+
+      const pdfBytes = await pdfDoc.save()
+      reportContent = Buffer.from(pdfBytes) as any
+      contentType = "application/pdf"
+      filename = `${photo.filename}_analysis.pdf`
     } else {
       // Default to text format
       reportContent = photo.analysis_results.report || "Report not available"

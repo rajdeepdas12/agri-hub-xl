@@ -64,6 +64,31 @@ export default function PhotoDetailPage({ params }: { params: { id: string } }) 
     }
   }
 
+  const onDownloadPdf = async () => {
+    try {
+      const res = await fetch(`/api/photos/report`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ photoId: id, format: "pdf" }),
+      })
+      if (!res.ok) {
+        const t = await res.text()
+        throw new Error(t || "Failed to download report")
+      }
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement("a")
+      a.href = url
+      a.download = `${photo?.filename || id}_analysis.pdf`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      URL.revokeObjectURL(url)
+    } catch (e: any) {
+      setAnalyzeError(e?.message || "Failed to download report")
+    }
+  }
+
   if (loading) return <main className="p-6">Loading...</main>
   if (error) return <main className="p-6 text-red-600">{error}</main>
   if (!photo) return <main className="p-6">No photo found.</main>
@@ -128,6 +153,15 @@ export default function PhotoDetailPage({ params }: { params: { id: string } }) 
             )}
           </div>
         )}
+      </div>
+
+      <div className="flex gap-2">
+        <button
+          onClick={onDownloadPdf}
+          className="inline-flex items-center justify-center rounded bg-blue-600 px-3 py-1.5 text-white hover:bg-blue-700"
+        >
+          Download PDF report
+        </button>
       </div>
 
       {analyzeError && <div className="text-red-600">{analyzeError}</div>}
