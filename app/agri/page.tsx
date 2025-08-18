@@ -1447,9 +1447,12 @@ export default function AgriDashboard() {
                   <div className="space-y-3 animate-slide-up">
                     <h4 className="font-medium text-slate-900 dark:text-slate-100">Upload Progress</h4>
                     {uploadProgress.map((progress) => (
-                      <div key={progress.id} className="space-y-2 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                      <div
+                        key={`${progress.file.name}-${progress.file.size}-${(progress.file as any)?.lastModified ?? ""}`}
+                        className="space-y-2 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg"
+                      >
                         <div className="flex justify-between text-sm">
-                          <span className="truncate">{progress.filename}</span>
+                          <span className="truncate">{progress.file.name}</span>
                           <span>{progress.progress}%</span>
                         </div>
                         <div className="w-full bg-slate-200 dark:bg-slate-700 rounded-full h-2 overflow-hidden">
@@ -1664,8 +1667,8 @@ export default function AgriDashboard() {
               <CardContent className="space-y-6">
                 {/* Drone Status Grid */}
                 <div className="grid md:grid-cols-2 gap-4">
-                  {droneFleet.map((drone, index) => (
-                    <div key={index} className="p-4 border rounded-lg bg-white dark:bg-slate-800">
+                  {droneFleet.map((drone) => (
+                    <div key={drone.id} className="p-4 border rounded-lg bg-white dark:bg-slate-800">
                       <div className="flex items-center justify-between mb-3">
                         <div className="flex items-center gap-2">
                           <Plane className="w-4 h-4 text-primary" />
@@ -2058,8 +2061,8 @@ export default function AgriDashboard() {
                       time: "3 days ago",
                       images: 321,
                     },
-                  ].map((flight, index) => (
-                    <div key={index} className="flex items-center justify-between p-3 border rounded-lg">
+                  ].map((flight) => (
+                    <div key={`${flight.mission}-${flight.time}`} className="flex items-center justify-between p-3 border rounded-lg">
                       <div className="flex items-center gap-3">
                         <Plane className="w-5 h-5 text-primary" />
                         <div>
