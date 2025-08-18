@@ -88,7 +88,7 @@ export interface GeminiResponse {
 // Default Gemini 2.0 Flash configuration
 export const defaultGeminiConfig: GeminiConfig = {
   apiKey: process.env.NEXT_PUBLIC_GEMINI_API_KEY || "",
-  model: "gemini-2.0-flash-exp",
+  model: "gemini-1.5-flash",
   maxTokens: 8192,
   temperature: 0.4,
   topP: 0.8,
